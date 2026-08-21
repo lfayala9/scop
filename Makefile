@@ -1,27 +1,26 @@
 CC = g++
-
 NAME = scop
-
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -Wall -Wextra -Werror -std=c++20
+INCLUDE = -I./include
+LIBS = -L./build/src -lglfw -lvulkan
 
 SRCS = main.cpp window.cpp
-
 OBJ = $(SRCS:.cpp=.o)
 
 all: $(NAME)
 
 $(NAME): $(OBJ)
-		$(CC) $(SRCS) -I./include -L./build/src -lglfw  -lvulkan -o $(NAME)
+	$(CC) -std=c++20 $(OBJ) $(INCLUDE) $(LIBS) -o $(NAME)
 
 %.o: %.cpp
-		$(CC) $(FLAGS) -c $< -o $@
+	$(CC) -std=c++20 $(INCLUDE) -c $< -o $@
 
 clean:
-		rm -rf $(OBJ)
+	rm -rf $(OBJ)
 
-fclean:
-		rm -rf $(OBJ) $(NAME)
+fclean: clean
+	rm -rf $(NAME)
 
 re: fclean all
 
-.PHONY = all clean fclean re
+.PHONY: all clean fclean re
