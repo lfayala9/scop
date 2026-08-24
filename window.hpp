@@ -15,6 +15,7 @@ import vulkan_hpp;
 #include <cstdlib>
 #include <iostream>
 #include <memory>
+#include <map>
 #include <vector>
 #include <stdexcept>
 
@@ -34,20 +35,24 @@ class window
 			~window();
 			void	run();
 	private:
-			void	instance_vulkan();
-			void	init_vulkan();
-			void	main_loop();
-			void 	debug_message();
-   			 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			void									instance_vulkan();
+			void									init_vulkan();
+			void									main_loop();
+			void									get_device();
+			bool									is_suitable(vk::raii::PhysicalDevice const &device);
+			void 									debug_message();
+   			static VKAPI_ATTR VkBool32 VKAPI_CALL	debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 																VkDebugUtilsMessageTypeFlagsEXT messageType,
 																const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 																void* pUserData);
-			vk::raii::Context	context;
-			vk::raii::DebugUtilsMessengerEXT debug_msg = nullptr;
-			vk::raii::Instance	instance = nullptr;
-			uint32_t			width;
-			uint32_t			height;
-			GLFWwindow			*wdw;
+			vk::raii::Context					context;
+			vk::raii::Instance					instance = nullptr;
+			vk::raii::DebugUtilsMessengerEXT 	debug_msg = nullptr;
+			vk::raii::PhysicalDevice			device = nullptr;
+			std::vector<const char*> 			requiredDeviceExtension = {vk::KHRSwapchainExtensionName};
+			uint32_t							width;
+			uint32_t							height;
+			GLFWwindow							*wdw;
 };
 
 #endif
