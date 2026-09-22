@@ -89,7 +89,7 @@ void	app::get_device()
 
 	if (dev_iter == devices.end())
 		throw std::runtime_error( "failed to find a suitable GPU!" );
-	device = std::move(*dev_iter);
+	physical_device = std::move(*dev_iter);
 	// auto props = device.getProperties();
 	// auto mem_props = device.getMemoryProperties();
 
@@ -110,6 +110,40 @@ void	app::get_device()
 	// std::cout << "  VRAM (Dedicated): " << (vram_bytes / (1024 * 1024)) << " MB ("
 	//           << (static_cast<double>(vram_bytes) / (1024.0 * 1024.0 * 1024.0)) << " GB)" << std::endl;
 	// std::cout << "==========================================\n" << std::endl;
+}
+
+void	app::create_logical_device()
+{
+	std::vector<vk::QueueFamilyProperties>	queue_props = physical_device.getQueueFamilyProperties();
+	auto									graphic_queue_props = std::ranges::find_if(queue_props, [](auto const &qfp) { return (qfp.queueFlags &vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);});
+	auto									graphics_index = static_cast<uint32_t>(std::distance(queue_props.begin(), graphic_queue_props));
+	assert(graphic_queue_props != queue_props.end() && "No graphics queue family found!");
+		// query for Vulkan 1.3 features
+		vk::StructureChain<vk::PhysicalDeviceFeatures2,
+		                   vk::PhysicalDeviceVulkan11Features,
+		                   vk::PhysicalDeviceVulkan13Features,
+		                   vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>
+		    featureChain = {
+		        {},                                    // vk::PhysicalDeviceFeatures2
+		        {.shaderDrawParameters = true},        // vk::PhysicalDeviceVulkan11Features
+		        {.dynamicRendering = true},            // vk::PhysicalDeviceVulkan13Features
+		        {.extendedDynamicState = true}         // vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT
+		    };
+		// create a Device
+		float queuePriority = 0.5f;
+		vk::DeviceQueueCreateInfo deviceQueueCreateInfo({}, graphics_index, 1, &queuePriority);
+		vk::DeviceCreateInfo deviceCreateInfo({},
+		                                     1,
+		                                     &deviceQueueCreateInfo,
+		                                     0,
+		                                     nullptr,
+		                                     static_cast<uint32_t>(requiredDeviceExtension.size()),
+		                                     requiredDeviceExtension.data(),
+		                                     nullptr);
+		deviceCreateInfo.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>();
+
+		device        = vk::raii::Device(physical_device, deviceCreateInfo);
+		graphics_queue = vk::raii::Queue(device, graphics_index, 0);	
 }
 
 void	app::instance_vulkan()
@@ -169,6 +203,7 @@ void	app::init_vulkan()
 	instance_vulkan();
 	debug_message();
 	get_device();
+	create_logical_device();
 }
 
 void	app::main_loop()

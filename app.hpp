@@ -37,8 +37,10 @@ class app
 	private:
 			void									instance_vulkan();
 			void									init_vulkan();
+			void									create_surface();
 			void									main_loop();
 			void									get_device();
+			void									create_logical_device();
 			bool									is_suitable(vk::raii::PhysicalDevice const &device);
 			void 									debug_message();
    			static VKAPI_ATTR VkBool32 VKAPI_CALL	debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -48,7 +50,9 @@ class app
 			vk::raii::Context					context;
 			vk::raii::Instance					instance = nullptr;
 			vk::raii::DebugUtilsMessengerEXT 	debug_msg = nullptr;
-			vk::raii::PhysicalDevice			device = nullptr;
+			vk::raii::PhysicalDevice			physical_device = nullptr;
+			vk::raii::Device					device = nullptr;
+			vk::raii::Queue						graphics_queue = nullptr;
 			std::vector<const char*> 			requiredDeviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 			uint32_t							width;
 			uint32_t							height;
