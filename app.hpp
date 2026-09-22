@@ -1,5 +1,5 @@
-#ifndef WINDOW_HPP
-#define WINDOW_HPP
+#ifndef APP_HPP
+#define APP_HPP
 #define GLFW_INCLUDE_VULKAN
 #define WIDTH 1080
 #define HEIGHT 720
@@ -23,16 +23,16 @@ const std::vector<const char *>	validation_layers = {
 	"VK_LAYER_KHRONOS_validation"
 };
 #ifdef NDEBUG
-constexpr bool enable_validation = false;
+inline bool enable_validation = false;
 #else
-constexpr bool enable_validation = true;
+inline bool enable_validation = true;
 #endif
 
-class window
+class app
 {
 	public:
-			window(uint32_t w, uint32_t h);
-			~window();
+			app(uint32_t w, uint32_t h);
+			~app();
 			void	run();
 	private:
 			void									instance_vulkan();
@@ -49,7 +49,7 @@ class window
 			vk::raii::Instance					instance = nullptr;
 			vk::raii::DebugUtilsMessengerEXT 	debug_msg = nullptr;
 			vk::raii::PhysicalDevice			device = nullptr;
-			std::vector<const char*> 			requiredDeviceExtension = {vk::KHRSwapchainExtensionName};
+			std::vector<const char*> 			requiredDeviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 			uint32_t							width;
 			uint32_t							height;
 			GLFWwindow							*wdw;

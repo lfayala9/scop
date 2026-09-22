@@ -1,4 +1,4 @@
-#include "window.hpp"
+#include "app.hpp"
 
 int	main(int ac, char **av)
 {
@@ -8,7 +8,7 @@ int	main(int ac, char **av)
 	(void)av;
 	try
 	{
-		window win(WIDTH, HEIGHT);
+		app win(WIDTH, HEIGHT);
 		win.run();
 	}
 	catch(const std::exception& e)

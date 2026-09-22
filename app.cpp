@@ -1,6 +1,6 @@
-#include "window.hpp"
+#include "app.hpp"
 
-window::window(uint32_t w, uint32_t h) : width(w), height(h)
+app::app(uint32_t w, uint32_t h) : width(w), height(h)
 {
 	if (!glfwInit())
 		throw std::runtime_error("Failed to initialize");
@@ -28,7 +28,7 @@ std::vector<const char*> get_instance_extension()
     return extensions;
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL window::debugCallback(
+VKAPI_ATTR VkBool32 VKAPI_CALL app::debugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -41,7 +41,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL window::debugCallback(
     return VK_FALSE;
 }
 
-void	window::debug_message()
+void	app::debug_message()
 {
 	if (!enable_validation)
 		return;
@@ -56,7 +56,7 @@ void	window::debug_message()
 	debug_msg = instance.createDebugUtilsMessengerEXT(debugUtilsMessengerCreateInfoEXT);
 }
 
-bool	window::is_suitable(vk::raii::PhysicalDevice const &device)
+bool	app::is_suitable(vk::raii::PhysicalDevice const &device)
 {
 	bool	support_13;
 	bool	support_extensions;
@@ -69,7 +69,7 @@ bool	window::is_suitable(vk::raii::PhysicalDevice const &device)
                                                     vk::PhysicalDeviceVulkan13Features,
                                                     vk::PhysicalDeviceExtendedDynamicStateFeaturesEXT>();
 											
-	support_13 = device.getProperties().apiVersion >= vk::ApiVersion13;
+	support_13 = device.getProperties().apiVersion >= VK_API_VERSION_1_3;
 	support_graphics = std::ranges::any_of(queue_families, [](auto const &qfp) {return !!(qfp.queueFlags &vk::QueueFlagBits::eGraphics);});
 	support_extensions = std::ranges::all_of(requiredDeviceExtension, [&available_extensions](auto const &requiredDeviceExtension)
 											{
@@ -82,14 +82,14 @@ bool	window::is_suitable(vk::raii::PhysicalDevice const &device)
 	return (support_13 && support_graphics && support_extensions && support_feats);
 }
 
-void	window::get_device()
+void	app::get_device()
 {
 	std::vector<vk::raii::PhysicalDevice>	devices = instance.enumeratePhysicalDevices();
 	auto const								dev_iter = std::ranges::find_if(devices, [&](auto const &device){return is_suitable(device);});
 
 	if (dev_iter == devices.end())
 		throw std::runtime_error( "failed to find a suitable GPU!" );
-	device = *dev_iter;
+	device = std::move(*dev_iter);
 	// auto props = device.getProperties();
 	// auto mem_props = device.getMemoryProperties();
 
@@ -112,7 +112,7 @@ void	window::get_device()
 	// std::cout << "==========================================\n" << std::endl;
 }
 
-void	window::instance_vulkan()
+void	app::instance_vulkan()
 {
 	VkApplicationInfo	app_info{};
 	app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -131,8 +131,14 @@ void	window::instance_vulkan()
 			                                               return std::ranges::none_of(layer_properties,
                                                                 [required_layer](auto const &layer_property) { return strcmp(layer_property.layerName, required_layer) == 0; });
 		                                               });
+    // if (unsupportedLayerIt != required_layers.end())
+    //     throw std::runtime_error("Required layer not supported: " + std::string(*unsupportedLayerIt));
     if (unsupportedLayerIt != required_layers.end())
-        throw std::runtime_error("Required layer not supported: " + std::string(*unsupportedLayerIt));
+    {
+        std::cerr << "Validation layers unavailable; continuing without them.\n";
+        enable_validation = false;
+        required_layers.clear();
+    }
     auto required_extension = get_instance_extension();
     auto extension_properties = context.enumerateInstanceExtensionProperties();
     auto unsupported_properties =
@@ -153,27 +159,29 @@ void	window::instance_vulkan()
 	instance = vk::raii::Instance(context, create_info);
 }
 
-void	window::run()
+void	app::run()
 {
 	main_loop();
 }
 
-void	window::init_vulkan()
+void	app::init_vulkan()
 {
 	instance_vulkan();
 	debug_message();
 	get_device();
 }
 
-void	window::main_loop()
+void	app::main_loop()
 {
     while (!glfwWindowShouldClose(wdw))
         glfwPollEvents();
 }
 
-window::~window()
+app::~app()
 {
 	if (wdw)
     	glfwDestroyWindow(wdw);
     glfwTerminate();	
 }
+    // if (unsupportedLayerIt != required_layers.end())
+    //     throw std::runtime_error("Required layer not supported: " + std::string(*unsupportedLayerIt));

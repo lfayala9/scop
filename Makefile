@@ -4,7 +4,7 @@ FLAGS = -Wall -Wextra -Werror -std=c++20
 INCLUDE = -I./include
 LIBS = -L./build/src -lglfw -lvulkan
 
-SRCS = main.cpp window.cpp
+SRCS = main.cpp app.cpp
 OBJ = $(SRCS:.cpp=.o)
 
 all: $(NAME)
