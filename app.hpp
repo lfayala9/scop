@@ -14,6 +14,7 @@ import vulkan_hpp;
 #include <ranges>
 #include <cstdlib>
 #include <iostream>
+#include <limits>
 #include <memory>
 #include <map>
 #include <vector>
@@ -53,6 +54,7 @@ class app
 			vk::raii::PhysicalDevice			physical_device = nullptr;
 			vk::raii::Device					device = nullptr;
 			vk::raii::Queue						graphics_queue = nullptr;
+			vk::raii::SurfaceKHR 				surface = nullptr;
 			std::vector<const char*> 			requiredDeviceExtension = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 			uint32_t							width;
 			uint32_t							height;

@@ -115,9 +115,20 @@ void	app::get_device()
 void	app::create_logical_device()
 {
 	std::vector<vk::QueueFamilyProperties>	queue_props = physical_device.getQueueFamilyProperties();
-	auto									graphic_queue_props = std::ranges::find_if(queue_props, [](auto const &qfp) { return (qfp.queueFlags &vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);});
-	auto									graphics_index = static_cast<uint32_t>(std::distance(queue_props.begin(), graphic_queue_props));
-	assert(graphic_queue_props != queue_props.end() && "No graphics queue family found!");
+	// auto									graphic_queue_props = std::ranges::find_if(queue_props, [](auto const &qfp) { return (qfp.queueFlags &vk::QueueFlagBits::eGraphics) != static_cast<vk::QueueFlags>(0);});
+	// auto									graphics_index = static_cast<uint32_t>(std::distance(queue_props.begin(), graphic_queue_props));
+	// assert(graphic_queue_props != queue_props.end() && "No graphics queue family found!");
+	uint32_t								queue_index = ~0;
+	for (uint32_t qfp_index = 0; qfp_index < queue_props.size(); qfp_index++)
+	{
+		if ((queue_props[qfp_index].queueFlags & vk::QueueFlagBits::eGraphics) && physical_device.getSurfaceSupportKHR(qfp_index, *surface))
+		{
+			queue_index = qfp_index;
+			break;
+		}
+	}
+	if (queue_index == std::numeric_limits<uint32_t>::max())
+		throw std::runtime_error("Could not find a queue for graphics and present -> terminating");
 		// query for Vulkan 1.3 features
 		vk::StructureChain<vk::PhysicalDeviceFeatures2,
 		                   vk::PhysicalDeviceVulkan11Features,
@@ -131,7 +142,7 @@ void	app::create_logical_device()
 		    };
 		// create a Device
 		float queuePriority = 0.5f;
-		vk::DeviceQueueCreateInfo deviceQueueCreateInfo({}, graphics_index, 1, &queuePriority);
+		vk::DeviceQueueCreateInfo deviceQueueCreateInfo({}, queue_index, 1, &queuePriority);
 		vk::DeviceCreateInfo deviceCreateInfo({},
 		                                     1,
 		                                     &deviceQueueCreateInfo,
@@ -143,7 +154,7 @@ void	app::create_logical_device()
 		deviceCreateInfo.pNext = &featureChain.get<vk::PhysicalDeviceFeatures2>();
 
 		device        = vk::raii::Device(physical_device, deviceCreateInfo);
-		graphics_queue = vk::raii::Queue(device, graphics_index, 0);	
+		graphics_queue = vk::raii::Queue(device, queue_index, 0);	
 }
 
 void	app::instance_vulkan()
@@ -193,6 +204,15 @@ void	app::instance_vulkan()
 	instance = vk::raii::Instance(context, create_info);
 }
 
+void	app::create_surface()
+{
+	VkSurfaceKHR	_surface;
+
+	if (glfwCreateWindowSurface(*instance, wdw, nullptr, &_surface) != 0)
+        throw std::runtime_error("failed to create window surface!");
+	surface = vk::raii::SurfaceKHR(instance, _surface);
+}
+
 void	app::run()
 {
 	main_loop();
@@ -202,6 +222,7 @@ void	app::init_vulkan()
 {
 	instance_vulkan();
 	debug_message();
+	create_surface();
 	get_device();
 	create_logical_device();
 }
